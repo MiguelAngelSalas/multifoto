@@ -25,6 +25,7 @@ export default function GeneradorMultiFotoPC() {
   const cropperRef = useRef<any>(null); 
 
   // === REACT-CROPPER BINDING FIX ===
+  // Sincroniza el recuadro de recorte cuando cambias los inputs de cm
   useEffect(() => {
     const cropper = cropperRef.current?.cropper;
     if (cropper && activa) {
@@ -162,10 +163,8 @@ export default function GeneradorMultiFotoPC() {
   const paginasRenderizadas = calcularPaginas();
 
   return (
-    /* Layout estricto PC: Sin flex-col, siempre en fila */
     <div className="flex h-screen bg-neutral-900 text-white overflow-hidden font-sans print:block print:bg-white print:h-auto print:overflow-visible">
       
-      {/* MAGIA DE IMPRESIÓN PURA */}
       <style dangerouslySetInnerHTML={{__html: `
         @media print {
           @page { size: A4 portrait; margin: 0; }
@@ -173,9 +172,21 @@ export default function GeneradorMultiFotoPC() {
         }
       `}} />
 
-      {/* === PANEL IZQUIERDO (420px fijos) === */}
+      {/* === PANEL IZQUIERDO === */}
       <div className="w-[420px] bg-neutral-800 p-5 flex flex-col shrink-0 overflow-y-auto border-r-4 border-green-500 z-10 print:hidden">
-        <h2 className="text-2xl font-bold text-green-500 text-center mb-6">Multi-Foto PRO</h2>
+        
+        {/* BRANDING / LOGO */}
+        <div className="flex flex-col items-center justify-center mb-6 select-none">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" className="w-16 h-16 mb-2 drop-shadow-md transition-transform hover:scale-110">
+            <circle cx="50" cy="50" r="48" fill="none" stroke="#22C55E" strokeWidth="4"/>
+            <rect x="25" y="25" width="20" height="30" fill="#22C55E" rx="2" transform="rotate(-15 35 40)"/>
+            <rect x="55" y="15" width="30" height="20" fill="#22C55E" rx="2" transform="rotate(15 70 25)"/>
+            <rect x="65" y="50" width="20" height="30" fill="#22C55E" rx="2" transform="rotate(-10 75 65)"/>
+            <rect x="30" y="60" width="30" height="20" fill="#22C55E" rx="2" transform="rotate(10 45 70)"/>
+            <circle cx="50" cy="50" r="10" fill="#fff"/>
+          </svg>
+          <h2 className="text-2xl font-bold text-green-500 text-center tracking-wide uppercase">Multi-Foto PRO</h2>
+        </div>
         
         <div className="flex flex-wrap justify-center gap-3 mb-6">
           <div className="text-center">
@@ -248,12 +259,10 @@ export default function GeneradorMultiFotoPC() {
       </div>
 
       {/* === PANEL DERECHO (LIENZO) === */}
-      {/* Al imprimir, esto toma el 100% del ancho y resetea estilos de pantalla */}
       <div className="flex-1 bg-neutral-900 p-8 flex flex-col items-center overflow-y-auto gap-8 pb-32 print:block print:p-0 print:bg-white print:overflow-visible print:w-full print:h-auto">
         {paginasRenderizadas.map((pagina, pageIndex) => (
           <div 
             key={pageIndex}
-            /* Clases estrictas A4, sin escalas raras */
             className="bg-white box-border shrink-0 flex flex-wrap content-start shadow-[0_0_20px_rgba(0,0,0,0.8)] select-none overflow-hidden print:shadow-none print:m-0 print:break-after-page print:w-[210mm] print:h-[297mm]"
             style={{ 
               width: '210mm', 
@@ -270,7 +279,16 @@ export default function GeneradorMultiFotoPC() {
                 onClick={() => rotarFoto(foto.id, foto.src, foto.w, foto.h)}
                 onContextMenu={(e) => borrarFoto(e, foto.id)}
                 className="block border border-gray-300 object-contain cursor-pointer transition-colors box-border hover:border-blue-500 hover:border-2"
-                style={{ width: `${foto.w}cm`, height: `${foto.h}cm`, maxWidth: '100%', maxHeight: '100%' }}
+                /* MEDIDAS SAGRADAS: minWidth y flexShrink evitan que el margen de la hoja achique la foto */
+                style={{ 
+                  width: `${foto.w}cm`, 
+                  height: `${foto.h}cm`,
+                  minWidth: `${foto.w}cm`,
+                  minHeight: `${foto.h}cm`,
+                  flexShrink: 0,
+                  maxWidth: '100%', 
+                  maxHeight: '100%' 
+                }}
                 title="Izq: Rotar | Der: Borrar"
               />
             ))}
