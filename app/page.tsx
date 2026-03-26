@@ -185,7 +185,7 @@ export default function GeneradorMultiFotoPC() {
             <rect x="30" y="60" width="30" height="20" fill="#22C55E" rx="2" transform="rotate(10 45 70)"/>
             <circle cx="50" cy="50" r="10" fill="#fff"/>
           </svg>
-          <h2 className="text-2xl font-bold text-green-500 text-center tracking-wide uppercase">Multi-Foto PRO</h2>
+          <h2 className="text-2xl font-bold text-green-500 text-center tracking-wide uppercase">Multi-Foto</h2>
         </div>
         
         <div className="flex flex-wrap justify-center gap-3 mb-6">
