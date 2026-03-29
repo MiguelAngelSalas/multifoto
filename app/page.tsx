@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useRef, useCallback, useMemo } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { PageCanvas } from './components/PageCanvas';
 import { useImageProcessor } from './hooks/useImageProcesor';
@@ -20,14 +20,18 @@ export default function GeneradorMultiFotoPC() {
   const cropperRef = useRef<any>(null);
   const { createBlobUrl, revokeUrl } = useImageProcessor();
 
-  // === GESTIÓN DE MEMORIA ===
+  // === GESTIÓN DE MEMORIA INTELIGENTE ===
   const onVaciar = useCallback(() => {
-    // Liberamos memoria de los objetos creados
-    fotosEnHoja.forEach(f => revokeUrl(f.src));
+    // Liberamos memoria de los archivos de la galería
     archivos.forEach(a => revokeUrl(a));
-    setFotosEnHoja([]); 
-    setArchivos([]); 
+    setArchivos([]);
     setActiva(null);
+
+    // Para las fotos en la hoja, agrupamos por URL única
+    const urlsUnicas = new Set(fotosEnHoja.map(f => f.src));
+    // Y revocamos cada una una sola vez
+    urlsUnicas.forEach(url => revokeUrl(url));
+    setFotosEnHoja([]); 
   }, [fotosEnHoja, archivos, revokeUrl]);
 
   // === CARGA DE ARCHIVOS ===
@@ -46,14 +50,16 @@ export default function GeneradorMultiFotoPC() {
     const cropper = cropperRef.current?.cropper;
     if (!cropper) return;
     
-    // Generamos el recorte con alta calidad y lo pasamos a Blob URL
+    // Generamos el recorte una sola vez
     const url = await createBlobUrl(cropper.getCroppedCanvas({ imageSmoothingQuality: 'high' }));
     
+    // Creamos las copias. Todas comparten el mismo 'src'
     const nuevas = Array.from({ length: Math.max(1, cantidad) }).map(() => ({
       id: crypto.randomUUID(),
       src: url,
       w: ancho,
-      h: alto
+      h: alto,
+      rotacion: 0
     }));
     setFotosEnHoja(prev => [...prev, ...nuevas]);
   }, [cantidad, ancho, alto, createBlobUrl]);
@@ -62,40 +68,35 @@ export default function GeneradorMultiFotoPC() {
   const onBorrar = useCallback((id: string) => {
     setFotosEnHoja(prev => {
       const target = prev.find(f => f.id === id);
-      if (target) revokeUrl(target.src); // Limpieza de memoria
+      if (!target) return prev;
+
+      const urlABorrar = target.src;
+      // Contamos cuántas fotos *más* usan esta misma URL
+      const contadorReferencias = prev.filter(f => f.src === urlABorrar).length;
+
+      // === LA CLAVE: Solo revocamos si esta era la ÚLTIMA foto usándola ===
+      if (contadorReferencias === 1) {
+        revokeUrl(urlABorrar); 
+      }
+
       return prev.filter(f => f.id !== id);
     });
   }, [revokeUrl]);
 
-  // === ROTAR FOTO EN LIENZO (CLICK IZQUIERDO) ===
+  // === ROTAR FOTO (CLICK IZQUIERDO) ===
   const onRotar = useCallback((id: string, currentSrc: string, currentW: number, currentH: number) => {
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      // Invertimos dimensiones
-      canvas.width = img.height; 
-      canvas.height = img.width;
-      const ctx = canvas.getContext('2d')!;
-      
-      // Lógica de rotación 90°
-      ctx.translate(canvas.width / 2, canvas.height / 2);
-      ctx.rotate(Math.PI / 2);
-      ctx.drawImage(img, -img.width / 2, -img.height / 2);
-      
-      canvas.toBlob((blob) => {
-        if (!blob) return;
-        // Limpiamos la URL vieja antes de crear la nueva
-        if (currentSrc.startsWith('blob:')) revokeUrl(currentSrc);
-        
-        const newUrl = URL.createObjectURL(blob);
-        
-        setFotosEnHoja(prev => prev.map(f => 
-          f.id === id ? { ...f, src: newUrl, w: currentH, h: currentW } : f
-        ));
-      }, 'image/png');
-    };
-    img.src = currentSrc;
-  }, [revokeUrl]);
+    setFotosEnHoja(prev => prev.map(f => {
+      if (f.id === id) {
+        return { 
+          ...f, 
+          w: currentH, // Invertimos: el nuevo ancho es el alto viejo
+          h: currentW, // Invertimos: el nuevo alto es el ancho viejo
+          rotacion: ((f.rotacion || 0) + 90) % 360 
+        };
+      }
+      return f;
+    }));
+  }, []);
 
   // === ZOOM CROPPER ===
   const zoomIn = useCallback(() => cropperRef.current?.cropper.zoom(0.1), []);
@@ -106,23 +107,13 @@ export default function GeneradorMultiFotoPC() {
     const res: any[][] = [];
     let actual: any[] = [];
     let curX = 0; let curY = 0; let maxH = 0;
-    const gap = 0.3; // Espacio entre fotos en cm
-    const uW = 21 - ((margen / 10) * 2); // Ancho útil en cm
-    const uH = 29.7 - ((margen / 10) * 2); // Alto útil en cm
+    const gap = 0.3; // cm
+    const uW = 21 - ((margen / 10) * 2); 
+    const uH = 29.7 - ((margen / 10) * 2);
 
     fotosEnHoja.forEach(f => {
-      // ¿Entra en el ancho de la fila?
-      if (curX + f.w > uW + 0.05) { 
-        curX = 0; 
-        curY += maxH + gap; 
-        maxH = 0; 
-      }
-      // ¿Entra en el alto de la página?
-      if (curY + f.h > uH + 0.05) { 
-        res.push(actual); 
-        actual = []; 
-        curX = 0; curY = 0; maxH = 0; 
-      }
+      if (curX + f.w > uW + 0.05) { curX = 0; curY += maxH + gap; maxH = 0; }
+      if (curY + f.h > uH + 0.05) { res.push(actual); actual = []; curX = 0; curY = 0; maxH = 0; }
       actual.push(f);
       curX += f.w + gap;
       maxH = Math.max(maxH, f.h);
@@ -134,7 +125,6 @@ export default function GeneradorMultiFotoPC() {
 
   return (
     <div className="flex h-screen bg-neutral-900 text-white overflow-hidden select-none print:block">
-      {/* Sidebar Blindado con React.memo */}
       <Sidebar 
         ancho={ancho} setAncho={setAncho} 
         alto={alto} setAlto={setAlto}
@@ -148,7 +138,6 @@ export default function GeneradorMultiFotoPC() {
         zoomIn={zoomIn} zoomOut={zoomOut}
       />
       
-      {/* Canvas Blindado con React.memo */}
       <PageCanvas 
         paginas={paginasCalculadas} 
         esCircular={esCircular} 

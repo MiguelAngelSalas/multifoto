@@ -1,13 +1,7 @@
 "use client";
 
 import React, { memo } from 'react';
-
-interface FotoRecorte {
-  id: string;
-  src: string;
-  w: number;
-  h: number;
-}
+import { FotoRecorte } from '../types';
 
 interface PageCanvasProps {
   paginas: FotoRecorte[][];
@@ -15,17 +9,11 @@ interface PageCanvasProps {
   conBorde: boolean;
   margen: number;
   onBorrar: (id: string) => void;
-  // Actualizamos aquí para que coincida con el padre:
-  onRotar: (id: string, src: string, w: number, h: number) => void;
+  onRotar: (id: string, src: string, w: number, h: number) => void; 
 }
 
 export const PageCanvas = memo(({ 
-  paginas, 
-  esCircular, 
-  conBorde, 
-  margen, 
-  onBorrar,
-  onRotar
+  paginas, esCircular, conBorde, margen, onBorrar, onRotar 
 }: PageCanvasProps) => {
 
   const outlineStyle = conBorde ? '1.5px dashed #666' : '1px solid #eee';
@@ -44,31 +32,48 @@ export const PageCanvas = memo(({
             gap: '3mm' 
           }}
         >
-          {pagina.map((f) => (
-            <img 
-              key={f.id} 
-              src={f.src} 
-              // PASAMOS LOS 4 ARGUMENTOS AQUÍ:
-              onClick={() => onRotar(f.id, f.src, f.w, f.h)}
-              onContextMenu={(e) => {
-                e.preventDefault();
-                onBorrar(f.id);
-              }}
-              style={{ 
-                width: `${f.w}cm`, 
-                height: `${f.h}cm`, 
-                minWidth: `${f.w}cm`, 
-                minHeight: `${f.h}cm`,
-                borderRadius: borderRadius, 
-                outline: outlineStyle, 
-                outlineOffset: conBorde ? '1.5px' : '-1px', 
-                objectFit: 'cover',
-                backgroundColor: 'white',
-              }} 
-              className="cursor-pointer hover:opacity-80 active:scale-95 transition-opacity"
-              alt="foto-A4"
-            />
-          ))}
+          {pagina.map((f) => {
+            // Verificamos si la imagen está "acostada" (90° o 270°)
+            const estaRotada = f.rotacion % 180 !== 0;
+
+            return (
+              <div 
+                key={f.id}
+                onClick={() => onRotar(f.id, f.src, f.w, f.h)}
+                onContextMenu={(e) => { e.preventDefault(); onBorrar(f.id); }}
+                className="cursor-pointer hover:opacity-90 active:scale-95 transition-all bg-white overflow-hidden"
+                style={{ 
+                  width: `${f.w}cm`, 
+                  height: `${f.h}cm`, 
+                  minWidth: `${f.w}cm`, 
+                  minHeight: `${f.h}cm`,
+                  borderRadius: borderRadius, 
+                  outline: outlineStyle, 
+                  outlineOffset: conBorde ? '1.5px' : '-1px',
+                  position: 'relative',
+                  flexShrink: 0
+                }}
+              >
+                <img 
+                  src={f.src} 
+                  style={{ 
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    // Si está rotada, su ancho debe ser el alto del contenedor para no dejar huecos
+                    width: estaRotada ? `${f.h}cm` : '100%',
+                    height: estaRotada ? `${f.w}cm` : '100%',
+                    objectFit: 'cover',
+                    // Centramos y rotamos
+                    transform: `translate(-50%, -50%) rotate(${f.rotacion || 0}deg)`,
+                    transition: 'all 0.2s ease-in-out',
+                    pointerEvents: 'none' // Evita interferencias con el click del div
+                  }} 
+                  alt="foto-A4"
+                />
+              </div>
+            );
+          })}
         </div>
       ))}
     </div>
