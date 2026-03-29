@@ -20,20 +20,26 @@ export const PageCanvas = memo(({
   const borderRadius = esCircular ? '50%' : '0';
 
   return (
-    <div className="flex-1 bg-neutral-900 p-8 flex flex-col items-center overflow-y-auto gap-8 pb-32 print:block print:p-0 print:bg-white">
+    <div className="flex-1 bg-neutral-900 p-8 flex flex-col items-center overflow-y-auto gap-8 pb-32 print:block print:p-0 print:bg-white print:overflow-visible">
       {paginas.map((pagina, pIdx) => (
         <div 
           key={pIdx} 
-          className="bg-white shrink-0 flex flex-wrap content-start shadow-2xl print:shadow-none print:break-after-page" 
+          /* CLAVE PARA IMPRESIÓN: 
+            Usamos print:flex para que los márgenes (padding) y el gap se 
+            mantengan idénticos a la visualización de la web.
+          */
+          className="bg-white shrink-0 flex flex-wrap content-start shadow-2xl print:shadow-none print:break-after-page print:flex print:flex-wrap print:content-start" 
           style={{ 
             width: '210mm', 
             height: '297mm', 
             padding: `${margen}mm`, 
-            gap: '3mm' 
+            gap: '3mm',
+            position: 'relative',
+            boxSizing: 'border-box',
+            backgroundColor: 'white'
           }}
         >
           {pagina.map((f) => {
-            // Verificamos si la imagen está "acostada" (90° o 270°)
             const estaRotada = f.rotacion % 180 !== 0;
 
             return (
@@ -51,7 +57,10 @@ export const PageCanvas = memo(({
                   outline: outlineStyle, 
                   outlineOffset: conBorde ? '1.5px' : '-1px',
                   position: 'relative',
-                  flexShrink: 0
+                  flexShrink: 0,
+                  /* Evita que una foto se parta a la mitad entre dos hojas */
+                  breakInside: 'avoid',
+                  pageBreakInside: 'avoid'
                 }}
               >
                 <img 
@@ -60,14 +69,13 @@ export const PageCanvas = memo(({
                     position: 'absolute',
                     top: '50%',
                     left: '50%',
-                    // Si está rotada, su ancho debe ser el alto del contenedor para no dejar huecos
+                    /* Si está rotada 90/270, invertimos proporciones para llenar el contenedor */
                     width: estaRotada ? `${f.h}cm` : '100%',
                     height: estaRotada ? `${f.w}cm` : '100%',
                     objectFit: 'cover',
-                    // Centramos y rotamos
                     transform: `translate(-50%, -50%) rotate(${f.rotacion || 0}deg)`,
-                    transition: 'all 0.2s ease-in-out',
-                    pointerEvents: 'none' // Evita interferencias con el click del div
+                    transition: 'none',
+                    pointerEvents: 'none'
                   }} 
                   alt="foto-A4"
                 />
