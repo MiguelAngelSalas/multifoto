@@ -65,3 +65,32 @@ npm install
 Corre el servidor de desarrollo:
 npm run dev
 
+
+
+🗺️ Roadmap & Changelog
+Este proyecto sigue una filosofía de utilidad abierta: las funciones básicas siempre serán gratuitas y sin fricción, utilizando el registro de usuario solo para funcionalidades avanzadas de persistencia y personalización.
+
+🟢 Versión 1.0 (Actual - "The Core")
+Recorte de Precisión: Integración con Cropper.js para selección exacta de área.
+
+Rotación Lógica: Sistema de rotación de 90° que recalcula la grilla A4 automáticamente sin deformar la imagen.
+
+Motor de Paginación: Algoritmo que distribuye fotos en múltiples hojas A4 respetando márgenes y gaps.
+
+Exportación PDF: Generación de archivos listos para imprimir con fidelidad 1:1 respecto a la pantalla.
+
+Performance: Gestión de memoria mediante Blobs para evitar el lag de procesamiento.
+
+🟡 Versión 1.1 (Próximamente - "Advanced Control")
+Manipulación Dinámica del Crop: Implementación de modificadores de teclado (Shift/Alt) para permitir el estiramiento manual del lienzo de corte, rompiendo la relación de aspecto fija cuando sea necesario.
+
+Soporte Multi-Formato: Incorporación de lienzos A3 y otros tamaños de papel profesional, manteniendo la densidad de píxeles para impresiones de gran formato sin pérdida de calidad.
+
+Gestión de Espaciado: Control manual del gap entre imágenes para optimizar el guillotinado o troquelado.
+
+🔵 Versión 2.0 (Ecosistema & Registro)
+Infraestructura de Usuarios: Implementación de registro por Email (Backend ready). El sistema quedará preparado para la persistencia de datos en la nube sin afectar la interfaz limpia actual.
+
+Self-Promotion Hub: Espacio para la difusión de proyectos hermanos (Clipp y otros) mediante banners integrados de forma orgánica.
+
+Analítica de Uso: Medición de formatos más utilizados para priorizar el desarrollo de nuevos presets.
