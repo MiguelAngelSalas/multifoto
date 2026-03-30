@@ -53,3 +53,15 @@ Fuerza el tamaño de página A4 (210mm x 297mm).
 Elimina artefactos de la interfaz web (Sidebars, botones).
 
 Garantiza que el padding de usuario se traduzca en márgenes de impresión reales.
+
+Instalacion y uso:
+
+Clona el repo:
+git clone https://github.com/tu-usuario/multi-foto.git
+
+Instala dependencias:
+npm install
+
+Corre el servidor de desarrollo:
+npm run dev
+
