@@ -1,4 +1,5 @@
 "use client";
+import Link from 'next/link';
 
 import React, { memo, useEffect } from 'react';
 import Cropper from 'react-cropper';
@@ -23,8 +24,11 @@ export const Sidebar = memo(({
 
   return (
     <div className="w-[420px] bg-neutral-800 p-5 flex flex-col shrink-0 overflow-y-auto border-r-4 border-green-500 z-10 print:hidden shadow-2xl">
-      <h2 className="text-2xl font-black text-green-500 italic uppercase mb-6 text-center tracking-tighter">Multi-Foto </h2>
-      
+      <Link href="/">
+        <h2 className="text-2xl font-black text-green-500 italic uppercase mb-6 text-center tracking-tighter cursor-pointer hover:opacity-80 transition-opacity">
+          Multi-Foto
+        </h2>
+      </Link>      
       <div className="grid grid-cols-2 gap-3 mb-4 text-black font-bold">
         <div className="text-center">
           <label className="text-[10px] text-white uppercase">Ancho (cm)</label>
