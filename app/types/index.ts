@@ -3,5 +3,9 @@ export interface FotoRecorte {
   src: string;
   w: number;
   h: number;
-  rotacion: number; // <--- Agregamos esto
+  rotacion: number;
+  x?: number; 
+  y?: number;
+  yRelativo?: number; // <--- Agregá esta línea
+  tipo?: 'plancha' | 'png' | 'sticker'; // <--- Agregamos esto
 }
