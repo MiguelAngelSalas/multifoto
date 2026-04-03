@@ -13,7 +13,6 @@ const TAMANOS_HOJA = {
   A3: { nombre: 'A3', w: 29.7, h: 42 },
 };
 
-// Constante de conversión para mantener consistencia
 const CM_TO_PX = 38;
 
 export default function GeneradorMultiFotoPC() {
@@ -35,9 +34,47 @@ export default function GeneradorMultiFotoPC() {
   const [bordeSticker, setBordeSticker] = useState(2); 
   const [procesando, setProcesando] = useState(false);
   
+  // NUEVO: Estado para selección múltiple en la galería
+  const [seleccionadas, setSeleccionadas] = useState<string[]>([]);
+  
   const cropperRef = useRef<any>(null);
   const { createBlobUrl, revokeUrl } = useImageProcessor();
   const paginasCalculadas = useStickerLayout(fotosEnHoja, modo, margen, tamanoHoja);
+
+  // --- Función de Selección ---
+  const toggleSeleccion = useCallback((url: string) => {
+    setSeleccionadas(prev => 
+      prev.includes(url) ? prev.filter(u => u !== url) : [...prev, url]
+    );
+  }, []);
+
+  // --- Acciones de Imagen ---
+  const quitarFondo = useCallback(async (imageSrc: string) => {
+    setProcesando(true);
+    try {
+      const blob = await removeBackground(imageSrc, { model: 'isnet' });
+      const url = URL.createObjectURL(blob);
+      setArchivos(prev => [url, ...prev]);
+      setActiva(url);
+      return url;
+    } catch (e) { 
+      console.error("Error en IA:", e);
+      return null;
+    } finally { 
+      setProcesando(false); 
+    }
+  }, []);
+
+  // NUEVO: Procesar todas las seleccionadas una por una
+  const procesarLoteIA = useCallback(async () => {
+    if (seleccionadas.length === 0) return;
+    const aProcesar = [...seleccionadas];
+    setSeleccionadas([]); // Limpiamos selección al empezar
+    
+    for (const url of aProcesar) {
+      await quitarFondo(url);
+    }
+  }, [seleccionadas, quitarFondo]);
 
   // --- Manejo de Archivos ---
   const onFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -45,32 +82,30 @@ export default function GeneradorMultiFotoPC() {
     const nuevasUrls = Array.from(e.target.files).map(file => URL.createObjectURL(file));
     setArchivos(prev => [...prev, ...nuevasUrls]);
     setActiva(nuevasUrls[0]);
-    e.target.value = ''; // Reset para permitir subir la misma foto
+    e.target.value = '';
   }, []);
 
   const onVaciar = useCallback(() => {
+    // 1. Limpiamos la memoria de los Blobs (lo que ya hacías)
     archivos.forEach(revokeUrl);
+    
+    // 2. Vaciamos TODOS los estados de fotos
     setFotosEnHoja([]);
     setArchivos([]);
-    setActiva(null);
-  }, [archivos, revokeUrl]);
+    setSeleccionadas([]);
+    
+    // 3. LA CLAVE: Matamos la imagen "activa" o "seleccionada"
+    // Si no reseteás esto, al tocar "Añadir" el sistema usa la que quedó acá.
+    setActiva(null); 
 
-  // --- Acciones de Imagen ---
-  const quitarFondo = useCallback(async (imageSrc: string) => {
-    if (procesando) return;
-    setProcesando(true);
-    try {
-      const blob = await removeBackground(imageSrc, { model: 'isnet' });
-      const url = URL.createObjectURL(blob);
-      setArchivos(prev => [url, ...prev]);
-      setActiva(url);
-    } catch (e) { 
-      console.error(e);
-      alert("Error con la IA al quitar fondo"); 
-    } finally { 
-      setProcesando(false); 
+    // 4. El "Golpe de Gracia" al input físico (por el ID que pusimos)
+    const input = document.getElementById('main-file-input') as HTMLInputElement;
+    if (input) {
+      input.value = ""; 
     }
-  }, [procesando]);
+
+    console.log("Sistema Clipp: Limpieza profunda completada.");
+  }, [archivos, revokeUrl, setActiva]);
 
   const onAgregar = useCallback(async () => {
     const cropper = cropperRef.current?.cropper;
@@ -86,11 +121,26 @@ export default function GeneradorMultiFotoPC() {
     const wF = modo === 'sticker' ? anchoSticker : ancho;
     const hF = modo === 'sticker' ? altoSticker : alto;
 
+    // --- LÓGICA DE POSICIONAMIENTO DINÁMICO ---
+    const margenPx = margen * (CM_TO_PX / 10); // mm a px
+    const anchoHojaPx = tamanoHoja.w * CM_TO_PX;
+    const stickerWidthPx = wF * CM_TO_PX;
+    const stickerHeightPx = hF * CM_TO_PX;
+    const gap = 10; // Espacio entre stickers en px
+
+    // Calculamos cuántos entran por fila realmente (usando el ancho disponible)
+    const areaUtilWidth = anchoHojaPx - (margenPx * 2);
+    const fotosPorFila = Math.floor(areaUtilWidth / (stickerWidthPx + gap)) || 1;
+
     const nuevas = Array.from({ length: Math.max(1, cantidad) }).map((_, i) => {
       const index = fotosEnHoja.length + i;
-      // Posicionamiento inicial automático para Stickers
-      const xPos = (index % 4) * (wF * CM_TO_PX + 20);
-      const yPos = Math.floor(index / 4) * (hF * CM_TO_PX + 20);
+      
+      // X: Empezamos desde el margen izquierdo
+      const xPos = margenPx + (index % fotosPorFila) * (stickerWidthPx + gap);
+      
+      // Y: Calculamos la posición global (puede caer en cualquier hoja)
+      // También empezamos respetando el margen superior
+      const yPos = margenPx + Math.floor(index / fotosPorFila) * (stickerHeightPx + gap);
 
       return {
         id: crypto.randomUUID(),
@@ -104,7 +154,8 @@ export default function GeneradorMultiFotoPC() {
     });
 
     setFotosEnHoja(prev => [...prev, ...nuevas]);
-  }, [cantidad, ancho, alto, anchoSticker, altoSticker, modo, fotosEnHoja.length, createBlobUrl, bordeSticker]);
+    // Agregamos tamanoHoja y margen a las dependencias para que el cálculo sea exacto
+  }, [cantidad, ancho, alto, anchoSticker, altoSticker, modo, fotosEnHoja.length, createBlobUrl, bordeSticker, tamanoHoja, margen]);
 
   const onRotar = useCallback(async (id: string, currentSrc: string) => {
     const nuevaUrl = await ImageService.rotateImage(currentSrc);
@@ -117,7 +168,7 @@ export default function GeneradorMultiFotoPC() {
 
   const onBorrar = useCallback((id: string) => {
     setFotosEnHoja(prev => {
-      const target = prev.find(f => f.id === id);
+      const target = prev.find(f => f.id === id); 
       if (target && !target.src.startsWith('data:')) revokeUrl(target.src);
       return prev.filter(f => f.id !== id);
     });
@@ -134,7 +185,11 @@ export default function GeneradorMultiFotoPC() {
           colorHoja, setColorHoja, tamanoHoja, setTamanoHoja,
           modo, setModo, bordeSticker, setBordeSticker
         }}
-        galeria={{ archivos, activa, setActiva, onFileUpload, onVaciar, quitarFondo, procesando }}
+        galeria={{ 
+          archivos, activa, setActiva, onFileUpload, onVaciar, 
+          quitarFondo, procesando,
+          seleccionadas, toggleSeleccion, procesarLoteIA // <--- Mandamos las nuevas acciones
+        }}
         editor={{ cropperRef, onAgregar }}
         opcionesHoja={TAMANOS_HOJA}
       />

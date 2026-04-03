@@ -6,7 +6,6 @@ import { SidebarGallery } from './SidebarGallery';
 import { StickerControls } from './StickerControls';
 import { SheetSettings } from './SheetSettings';
 
-// Definimos una interfaz clara para las props (Principio de Segregación de Interfaces)
 interface SidebarProps {
   config: any;
   galeria: any;
@@ -28,8 +27,12 @@ export const Sidebar = memo(({ config, galeria, editor, opcionesHoja }: SidebarP
   }, [config.ancho, config.alto, activa, modo, cropperRef]);
 
   const manejarAccionPrincipal = () => {
+    // Seguridad extra: Si no hay imagen activa, no hacemos nada
+    if (!activa) return;
+
     if (modo === 'png') {
       const canvas = cropperRef.current?.cropper.getCroppedCanvas();
+      if (!canvas) return;
       const link = document.createElement('a');
       link.download = `recorte-${Date.now()}.png`;
       link.href = canvas.toDataURL('image/png');
@@ -68,7 +71,7 @@ export const Sidebar = memo(({ config, galeria, editor, opcionesHoja }: SidebarP
 
       <div className="flex-1 overflow-y-auto p-4 pt-1 space-y-4 scrollbar-thin scrollbar-thumb-neutral-600">
         
-        {/* SRP: Galería delegada */}
+        {/* Galería con el ID para limpieza física */}
         <SidebarGallery {...galeria} modo={modo} />
 
         {/* Visor de Recorte */}
@@ -123,7 +126,6 @@ export const Sidebar = memo(({ config, galeria, editor, opcionesHoja }: SidebarP
           </div>
         )}
 
-        {/* SETTINGS DE LA HOJA (SRP: Extraído) */}
         {modo !== 'png' && (
           <SheetSettings 
             cantidad={config.cantidad} 
@@ -133,21 +135,22 @@ export const Sidebar = memo(({ config, galeria, editor, opcionesHoja }: SidebarP
             tamanoHoja={tamanoHoja} 
             setTamanoHoja={setTamanoHoja}
             opcionesTamano={opcionesHoja}
-            // AGREGÁ ESTAS DOS LÍNEAS:
             colorHoja={config.colorHoja}
             setColorHoja={config.setColorHoja}
           />
         )}
       </div>
 
-      {/* FOOTER ACCIONES */}
+      {/* FOOTER ACCIONES - EL FIX ESTÁ ACÁ */}
       <div className="p-4 bg-neutral-800 border-t border-neutral-700 space-y-2 mt-auto">
         <div className="flex gap-2">
           <button 
             type="button" 
-            onClick={manejarAccionPrincipal} 
-            disabled={procesando} 
-            className={`flex-1 font-black py-3 rounded-xl shadow-xl uppercase text-[9px] tracking-widest transition-all text-white disabled:opacity-50 ${
+            // FIX: Solo permite el click si hay una imagen 'activa'
+            onClick={() => activa && manejarAccionPrincipal()} 
+            // FIX: Deshabilitado visual y funcionalmente si no hay 'activa'
+            disabled={procesando || !activa} 
+            className={`flex-1 font-black py-3 rounded-xl shadow-xl uppercase text-[9px] tracking-widest transition-all text-white disabled:opacity-30 disabled:cursor-not-allowed ${
               modo === 'sticker' ? 'bg-yellow-600 hover:bg-yellow-500' : modo === 'png' ? 'bg-blue-600 hover:bg-blue-500' : 'bg-green-600 hover:bg-green-500'
             }`}
           >
