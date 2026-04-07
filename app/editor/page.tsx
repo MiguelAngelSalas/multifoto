@@ -8,6 +8,7 @@ import { useStickerLayout } from '../hooks/useStickerLayout';
 import { ImageService } from '../utils/imageServices';
 import { removeBackground } from '@imgly/background-removal';
 
+
 const TAMANOS_HOJA = {
   A4: { nombre: 'A4', w: 21, h: 29.7 },
   A3: { nombre: 'A3', w: 29.7, h: 42 },
@@ -173,7 +174,6 @@ export default function GeneradorMultiFotoPC() {
       return prev.filter(f => f.id !== id);
     });
   }, [revokeUrl]);
-
   return (
     <div className="flex h-screen bg-neutral-900 text-white overflow-hidden select-none print:block print:bg-white print:h-auto">
       <Sidebar 

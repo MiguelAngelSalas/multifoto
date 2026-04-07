@@ -14,7 +14,14 @@ interface SidebarProps {
 }
 
 export const Sidebar = memo(({ config, galeria, editor, opcionesHoja }: SidebarProps) => {
-  const { modo, setModo, tamanoHoja, setTamanoHoja } = config;
+  // Extraemos también conBorde y esCircular de tu config
+  const { 
+    modo, setModo, 
+    tamanoHoja, setTamanoHoja,
+    conBorde, setConBorde,
+    esCircular, setEsCircular 
+  } = config;
+  
   const { archivos, activa, setActiva, onFileUpload, onVaciar, quitarFondo, procesando } = galeria;
   const { cropperRef, onAgregar } = editor;
 
@@ -126,6 +133,18 @@ export const Sidebar = memo(({ config, galeria, editor, opcionesHoja }: SidebarP
           </div>
         )}
 
+        {/* ESTILOS DE CORTE (Toggles originales) */}
+        {modo !== 'png' && (
+          <div className="flex flex-col gap-2 mb-2">
+            <button type="button" onClick={() => setConBorde(!conBorde)} className={`p-3 rounded-xl border-2 font-black text-[10px] uppercase transition-all shadow-sm ${conBorde ? 'bg-green-600 border-green-400 text-white' : 'bg-neutral-700 border-neutral-600 text-gray-500'}`}>
+              {conBorde ? '✅ Troquelado Activo' : '⚪ Sin Troquelado'}
+            </button>
+            <button type="button" onClick={() => setEsCircular(!esCircular)} className={`p-3 rounded-xl border-2 font-black text-[10px] uppercase transition-all shadow-sm ${esCircular ? 'bg-blue-600 border-blue-400 text-white' : 'bg-neutral-700 border-neutral-600 text-gray-500'}`}>
+              {esCircular ? '✅ Corte Circular' : '⚪ Corte Recto'}
+            </button>
+          </div>
+        )}
+
         {modo !== 'png' && (
           <SheetSettings 
             cantidad={config.cantidad} 
@@ -141,14 +160,12 @@ export const Sidebar = memo(({ config, galeria, editor, opcionesHoja }: SidebarP
         )}
       </div>
 
-      {/* FOOTER ACCIONES - EL FIX ESTÁ ACÁ */}
+      {/* FOOTER ACCIONES */}
       <div className="p-4 bg-neutral-800 border-t border-neutral-700 space-y-2 mt-auto">
         <div className="flex gap-2">
           <button 
             type="button" 
-            // FIX: Solo permite el click si hay una imagen 'activa'
             onClick={() => activa && manejarAccionPrincipal()} 
-            // FIX: Deshabilitado visual y funcionalmente si no hay 'activa'
             disabled={procesando || !activa} 
             className={`flex-1 font-black py-3 rounded-xl shadow-xl uppercase text-[9px] tracking-widest transition-all text-white disabled:opacity-30 disabled:cursor-not-allowed ${
               modo === 'sticker' ? 'bg-yellow-600 hover:bg-yellow-500' : modo === 'png' ? 'bg-blue-600 hover:bg-blue-500' : 'bg-green-600 hover:bg-green-500'

@@ -1,0 +1,34 @@
+generator client {
+  provider = "prisma-client-js" // <-- CORREGIDO: Faltaba el "-js"
+  output   = "../generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL") // <-- AGREGADO: Prisma necesita esto para el motor interno
+}
+
+model Usuario {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  password      String
+  nombre        String?
+  emailVerified DateTime?
+  
+  proyectos Proyecto[]
+
+  createdAt DateTime @default(now())
+}
+
+model Proyecto {
+  id            String   @id @default(uuid())
+  nombre        String   @default("Mi Plancha")
+  configuracion Json     
+  datosStickers Json     
+  
+  usuarioId     String
+  usuario       Usuario  @relation(fields: [usuarioId], references: [id])
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}

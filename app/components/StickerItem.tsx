@@ -11,6 +11,7 @@ export const StickerItem = ({ f, modo, borderRadius, outlineStyle, isDragging, h
         width: `${f.w}cm`, 
         height: `${f.h}cm`, 
         borderRadius, 
+        overflow: 'hidden', // <-- ESTA ES LA PALABRA MÁGICA QUE FALTABA
         outline: outlineStyle, 
         outlineOffset: '1px',
         position: modo === 'sticker' ? 'absolute' : 'relative',
