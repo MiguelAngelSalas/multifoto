@@ -1,5 +1,5 @@
 'use server'
-
+import AuthError from "next-auth"
 import prisma from "@/lib/prisma";
 import bcrypt from "bcrypt";
 import { Resend } from 'resend';
@@ -45,7 +45,7 @@ export async function registrarUsuario(formData: FormData) {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
     
     const { error: resendError } = await resend.emails.send({
-      from: 'Clipp <onboarding@resend.dev>', 
+      from: 'MultiFoto <onboarding@resend.dev>', 
       to: [email],
       subject: 'Confirma tu cuenta en Multi-Foto 🚀',
       html: `
@@ -85,7 +85,7 @@ export async function loginUsuario(formData: FormData) {
 
   try {
     const usuario = await prisma.usuario.findUnique({ where: { email } });
-
+    console.log(usuario)
     if (!usuario) return { error: "Credenciales incorrectas." };
 
     const passwordMatch = await bcrypt.compare(password, usuario.password);
@@ -97,8 +97,12 @@ export async function loginUsuario(formData: FormData) {
     }
 
     return { success: "Ingreso exitoso.", usuarioId: usuario.id };
+    
   } catch (error) {
-    console.error("Error en Login:", error);
-    return { error: "Error al intentar entrar." };
+    if(error instanceof AuthError){
+      return { error: "Error al intentar entrar." };
+    }
+      throw error
+    
   }
 }

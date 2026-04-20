@@ -1,5 +1,6 @@
 // components/sidebar/StickerControls.tsx
 import React from 'react';
+import {handleInputChange} from "../../utils/fromHandler"
 
 export const StickerControls = ({ ancho, setAncho, alto, setAlto, borde, setBorde }: any) => (
   <div className="space-y-3 animate-in zoom-in-95 duration-200">
@@ -9,7 +10,7 @@ export const StickerControls = ({ ancho, setAncho, alto, setAlto, borde, setBord
         <input 
           type="number" 
           value={ancho} 
-          onChange={e => setAncho(Number(e.target.value))} 
+          onChange={e => handleInputChange(e, setAncho)} 
           className="w-full p-1.5 rounded-md border border-yellow-500/50 text-white bg-neutral-800 font-bold text-[10px] focus:outline-none focus:border-yellow-500" 
         />
       </div>
@@ -18,7 +19,7 @@ export const StickerControls = ({ ancho, setAncho, alto, setAlto, borde, setBord
         <input 
           type="number" 
           value={alto} 
-          onChange={e => setAlto(Number(e.target.value))} 
+          onChange={e => handleInputChange(e, setAlto)} 
           className="w-full p-1.5 rounded-md border border-yellow-500/50 text-white bg-neutral-800 font-bold text-[10px] focus:outline-none focus:border-yellow-500" 
         />
       </div>

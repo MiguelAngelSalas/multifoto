@@ -17,8 +17,12 @@ export default function LoginPage() {
     if (result?.error) {
       setError(result.error);
       setLoading(false);
+      return
     }
-    // Si sale bien, Next.js se encarga de redireccionar desde el action
+
+    if(result?.success){
+      window.location.href="/editor"
+    }
   }
 
   return (

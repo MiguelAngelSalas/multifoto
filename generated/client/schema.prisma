@@ -13,21 +13,21 @@ model Usuario {
   password      String
   nombre        String?
   emailVerified DateTime?
-  
+
   proyectos Proyecto[]
 
   createdAt DateTime @default(now())
 }
 
 model Proyecto {
-  id            String   @id @default(uuid())
-  nombre        String   @default("Mi Plancha")
-  configuracion Json     
-  datosStickers Json     
-  
-  usuarioId     String
-  usuario       Usuario  @relation(fields: [usuarioId], references: [id])
+  id            String @id @default(uuid())
+  nombre        String @default("Mi Plancha")
+  configuracion Json
+  datosStickers Json
 
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  usuarioId String
+  usuario   Usuario @relation(fields: [usuarioId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

@@ -1,14 +1,9 @@
-import * as dotenv from 'dotenv';
-import path from 'path';
-
-// Forzamos la carga del .env.local
-dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
-
-import { Pool, neonConfig } from '@neondatabase/serverless';
+import { PrismaClient } from '../generated/client';
 import { PrismaNeon } from '@prisma/adapter-neon';
-import { PrismaClient } from '../generated/client/client'; // REVISÁ QUE ESTA RUTA SEA EXACTA
+import { neonConfig } from '@neondatabase/serverless';
 import ws from 'ws';
 
+// Next.js necesita esto para que Neon se pueda conectar vía WebSockets
 if (!globalThis.WebSocket) {
   neonConfig.webSocketConstructor = ws;
 }
@@ -16,23 +11,22 @@ if (!globalThis.WebSocket) {
 const connectionString = process.env.DATABASE_URL;
 
 if (!connectionString) {
-  throw new Error("❌ No se encontró DATABASE_URL en el .env.local");
+  throw new Error("❌ No se encontró DATABASE_URL en el entorno");
 }
 
-// Creamos el pool afuera del singleton para asegurar que persista
-const pool = new Pool({ connectionString });
-const adapter = new PrismaNeon(pool as any);
+// 🎉 EL CAMBIO CLAVE: PrismaNeon ahora recibe el connectionString directamente, sin usar un Pool
+const adapter = new PrismaNeon({ connectionString });
 
 const prismaClientSingleton = () => {
-  return new PrismaClient({ adapter });
+  return new PrismaClient({ adapter }); // Le pasamos el adaptador limpio a Prisma 7
 }
 
 declare global {
-  var prisma: undefined | ReturnType<typeof prismaClientSingleton>
+  var prismaGlobal: undefined | ReturnType<typeof prismaClientSingleton>
 }
 
-const prisma = globalThis.prisma ?? prismaClientSingleton();
+const prisma = globalThis.prismaGlobal ?? prismaClientSingleton();
 
 export default prisma;
 
-if (process.env.NODE_ENV !== 'production') globalThis.prisma = prisma;
+if (process.env.NODE_ENV !== 'production') globalThis.prismaGlobal = prisma;

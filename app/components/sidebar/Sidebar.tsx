@@ -5,6 +5,7 @@ import Cropper from 'react-cropper';
 import { SidebarGallery } from './SidebarGallery';
 import { StickerControls } from './StickerControls';
 import { SheetSettings } from './SheetSettings';
+import {handleInputChange} from "../../utils/fromHandler"
 
 interface SidebarProps {
   config: any;
@@ -59,6 +60,7 @@ export const Sidebar = memo(({ config, galeria, editor, opcionesHoja }: SidebarP
             Multi-Foto
           </h2>
         </Link>
+        
         <div className="flex gap-1 p-1 bg-neutral-900 rounded-lg border border-neutral-700">
           {['plancha', 'sticker', 'png'].map((m) => (
             <button 
@@ -72,10 +74,14 @@ export const Sidebar = memo(({ config, galeria, editor, opcionesHoja }: SidebarP
             >
               {m === 'plancha' ? '📏 Plancha' : m === 'sticker' ? '⭐ Sticker' : '✂️ PNG'}
             </button>
+            
           ))}
         </div>
+        <Link href="/doble-faz" className="mt-3 block w-full text-center py-2 bg-purple-900/30 border border-purple-700 text-purple-400 rounded-md font-black text-[9px] uppercase tracking-widest hover:bg-purple-600 hover:text-white transition-colors shadow-sm">
+          🔄 Ir a Herramienta Doble Faz
+        </Link>
       </div>
-
+          
       <div className="flex-1 overflow-y-auto p-4 pt-1 space-y-4 scrollbar-thin scrollbar-thumb-neutral-600">
         
         {/* Galería con el ID para limpieza física */}
@@ -124,11 +130,11 @@ export const Sidebar = memo(({ config, galeria, editor, opcionesHoja }: SidebarP
           <div className="grid grid-cols-2 gap-2 p-3 bg-neutral-900/50 rounded-xl border border-neutral-700 animate-in fade-in duration-200">
             <div className="flex flex-col text-center">
               <label className="text-[8px] text-gray-500 uppercase font-bold mb-0.5">Ancho Fijo (cm)</label>
-              <input type="number" value={config.ancho} onChange={e => config.setAncho(Number(e.target.value))} className="w-full p-1.5 rounded-md border border-neutral-600 focus:border-green-500 text-white bg-neutral-800 font-bold text-[10px]" />
+              <input type="number" value={config.ancho} onChange={e => handleInputChange(e,config.setAncho)} className="w-full p-1.5 rounded-md border border-neutral-600 focus:border-green-500 text-white bg-neutral-800 font-bold text-[10px]" />
             </div>
             <div className="flex flex-col text-center">
               <label className="text-[8px] text-gray-500 uppercase font-bold mb-0.5">Alto Fijo (cm)</label>
-              <input type="number" value={config.alto} onChange={e => config.setAlto(Number(e.target.value))} className="w-full p-1.5 rounded-md border border-neutral-600 focus:border-green-500 text-white bg-neutral-800 font-bold text-[10px]" />
+              <input type="number" value={config.alto} onChange={e => handleInputChange(e,config.setAlto)} className="w-full p-1.5 rounded-md border border-neutral-600 focus:border-green-500 text-white bg-neutral-800 font-bold text-[10px]" />
             </div>
           </div>
         )}
